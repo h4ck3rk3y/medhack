@@ -16,22 +16,103 @@ $Id$
 """
 
 import gtk
+import socket
+
 gtk.gdk.threads_init()
 
 import sys
 import vlc
 
+import serial
+ser = serial.Serial("/dev/ttyACM0", 9600)
+
 from gettext import gettext as _
 
-def send_message(message):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ip='192.168.43.132'
-    port = 8080
-    BUFFER_SIZE = 1024
-    sock.connect((ip, port))
-    sock.send(message)
-    sock.close()
+import threading
 
+
+def send_message(message):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ip='localhost'
+        port = 8080
+        BUFFER_SIZE = 1024
+        sock.connect((ip, port))
+        sock.send(message)
+        sock.close()
+    except:
+        print 'Couldnt send message'
+
+def parse_input(gui):
+    current_word = []
+
+    entire_message = []
+
+    abvs = {'btw': 'BY THE WAY', 'hhu': 'HI HOW ARE YOU? ', 'afaik': 'AS FAR AS I KNOW',
+            'pot': 'POINT OF VIEW', 'ge': 'GOOD EVERNING', 'ind': 'INDIA', 'gn': 'GOOD NIGHT',
+            'gm': 'GOOD MORNING',
+            'txt': 'TEXT', 'ie': 'THAT IS', 'brb': 'BE RIGHT BACK', 'cu': 'SEE YOU', 'grt': 'GREAT', 'thnx': 'THANKS', 'lol': 'LAUGHING OUT LOUD', '2': 'TO', '4': 'FOR', 'msg': 'MESSAGE', 'omg': 'OH MY GOD!!', 'asap': 'AS SOON AS POSSIBLE', 'plz': 'PLEASE', 'np': 'NO PROBLEM', '2moro': 'TOMMOROW', 'thku': 'THANK YOU', 'c': 'SEE', 'k': 'OK', 'coz': 'BECAUSE', 'sos': 'SAVE OUR SOULS',
+            'bcc': 'BRING ME A CUP OF COFFEE',
+            'idk': "I DON'T KNOW", 'y': 'WHY', 'ot': 'OUT OF CONTEXT', 'ily': ' I LOVE YOU'}
+
+    while True:
+        data = ser.readline().strip()
+
+
+        if data == "its a dit":
+            current_word.append("0")
+        elif data == "its a dash":
+            current_word.append("1")
+
+        print current_word
+
+        if len(current_word) == 5:
+            number = int(''.join(current_word), 2)
+            buffer = gui.control_box.talk.message.get_buffer()
+
+            if not number:
+                # @ToDo Send Message to Rocky
+                message = ''.join(entire_message)
+                if message.strip() in abvs:
+                    message = abvs[message.strip()].lower()
+                    message = message[0].upper() + message[1:]
+                else:
+                    print 'Entire Message: %s' %(message)
+
+                buffer.set_text(message)
+
+                send_message(message)
+                entire_message = []
+                current_word = []
+                continue
+            elif number < 26:
+                message = chr(ord('a') + number - 1)
+                buffer.set_text(message)
+                print 'Character: %s' %(message)
+            elif number == 27:
+                message = " "
+            elif number == 28:
+                # @ToDO Gyani independent sendall this asap
+                message = "change_mode"
+                current_word = []
+                data = s.recv(BUFFER_SIZE)
+                buffer.set_text(message)
+                send_message(message)
+                continue
+            elif number == 29:
+                # @ToDO independent sendall
+                gui.control_box.talk.message.get_buffer().set_text(message)
+                message = "this_is_an_sos"
+                send_message(message)
+                buffer.set_text(message)
+                current_word = []
+                continue
+            else:
+                message = "invalid-command"
+                buffer.set_text(message)
+
+            entire_message.append(message)
+            current_word = []
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
 instance = vlc.Instance()
 
@@ -69,7 +150,7 @@ class Loco(gtk.VBox):
 
         self.up = gtk.Button("Up")
         self.dw = gtk.Button("Dw")
-        self.le = gtk.Button("Dw")
+        self.le = gtk.Button("Le")
         self.ri = gtk.Button("Ri")
         self.st = gtk.Button("st")
 
@@ -89,42 +170,44 @@ class Loco(gtk.VBox):
 
     def upc(self, p):
         self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
-        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-
+        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        send_message("move_forward")
 
     def dwc(self, p):
-        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
+        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
         self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
-        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
+        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        send_message("move_backward")
 
     def lec(self, p):
-        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
+        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
         self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
-        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
+        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        send_message("move_left")
 
     def ric(self, p):
-        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
+        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
         self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
-        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-
-
+        self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        send_message("move_right")
 
 
     def stc(self, p):
-        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
-        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#000000'))
+        self.up.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.dw.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.le.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
+        self.ri.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ffffff'))
         self.st.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
+        send_message("move_stop")
 
 
 class Talk(gtk.VBox):
@@ -132,19 +215,36 @@ class Talk(gtk.VBox):
     def __init__(self, *p):
         gtk.VBox.__init__(self)
 
-        self.message = gtk.TextView(buffer=None)
+        self.message = gtk.TextView()
 
-        self.input = gtk.TextView(buffer=None)
+        ibufer = gtk.TextBuffer
+        self.input = gtk.TextView()
+        self.message.set_editable(setting=False)
 
-        self.input.set_editable(True)
+        self.input.set_editable(setting=True)
         self.send = gtk.Button("Send Input")
+        self.send.connect("clicked", self.send_data)
+
 
         self.message.set_size_request(30,30)
         self.input.set_size_request(30,30)
 
         self.add(self.message)
+        self.add(HackPad())
+        self.add(HackPad())
+
         self.add(self.input)
         self.add(self.send)
+
+    def send_data(self, p):
+        buffer_ = self.input.get_buffer()
+        s,e = buffer_.get_bounds()
+        data = buffer_.get_text(s, e)
+
+        buffer_ = self.input.get_buffer()
+        buffer_.set_text("")
+        send_message(data)
+
 
 
 class Top(gtk.HBox):
@@ -174,15 +274,16 @@ class Top(gtk.HBox):
     def locob(self, p=None):
         if self.outer.talk in self.outer:
             self.outer.remove(self.outer.talk)
-        self.outer.add(self.outer.loco)
+        if self.outer.loco not in self.outer:
+            self.outer.add(self.outer.loco)
         self.Loco.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
         self.Talk.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ff0000'))
 
     def talkb(self, p=None):
         if self.outer.loco in self.outer:
             self.outer.remove(self.outer.loco)
-
-        self.outer.add(self.outer.talk)
+        if self.outer.talk not in self.outer:
+            self.outer.add(self.outer.talk)
 
         self.Loco.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ff0000'))
         self.Talk.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#00ff00'))
@@ -193,7 +294,6 @@ class Controller(gtk.VBox):
 
     def __init__(self, *p):
         gtk.VBox.__init__(self)
-
 
         self.loco = Loco()
         self.talk = Talk()
@@ -260,6 +360,7 @@ class MultiVideoPlayer:
 
     It plays multiple files side-by-side, with per-view and global controls.
     """
+
     def main(self, filenames):
         # Build main window
         window=gtk.Window()
@@ -272,8 +373,8 @@ class MultiVideoPlayer:
         mainbox.add(videos)
         mainbox.add(controls)
 
-        control_box = Controller()
-        controls.add(control_box)
+        self.control_box = Controller()
+        controls.add(self.control_box)
 
 
         # Create VLC widgets
@@ -292,11 +393,18 @@ class MultiVideoPlayer:
         window.show_all()
         window.connect("destroy", gtk.main_quit)
 
-        control_box.top.locob()
+        self.control_box.top.locob()
 
         gtk.main()
 
 if __name__ == '__main__':
     # Multiple files.
     p=MultiVideoPlayer()
-    p.main(["do.mp4"])
+
+    gui_thread = threading.Thread(target=p.main, kwargs={"filenames": ["rtp://@192.168.43.132"]})
+    gui_thread.start()
+
+    audio_thread = threading.Thread(target=parse_input, kwargs={"gui": p})
+    audio_thread.start()
+
+    # parse_input(p)
