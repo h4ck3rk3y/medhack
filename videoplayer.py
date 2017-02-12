@@ -84,6 +84,7 @@ def parse_input(gui):
                     send_message("move_right")
                 elif number==28:
                     mode="talk"
+                    gui.control_box.top.talkb()
                     send_message("i will talk now")
                 else:
                     send_message("move_stop")
@@ -115,11 +116,9 @@ def parse_input(gui):
                 message = " "
             elif number == 28:
                 # @ToDO Gyani independent sendall this asap
-                message = "change_mode"
-                if mode=="loco":
-                    mode="talk"
-                elif mode=="talk":
-                    mode="loco"
+                message = "i will walk now"
+                mode="loco"
+                gui.control_box.top.locob()
                 current_word = []
                 data = s.recv(BUFFER_SIZE)
                 buffer.set_text(message)
