@@ -30,6 +30,7 @@ from gettext import gettext as _
 
 import threading
 
+mode="loco"
 
 def send_message(message):
     try:
@@ -44,6 +45,7 @@ def send_message(message):
         print 'Couldnt send message'
 
 def parse_input(gui):
+    global mode
     current_word = []
 
     entire_message = []
@@ -71,6 +73,25 @@ def parse_input(gui):
             number = int(''.join(current_word), 2)
             buffer = gui.control_box.talk.message.get_buffer()
 
+            if mode=="loco":
+                if number == 0:
+                    send_message("move_forward")
+                elif number== 1:
+                    send_message("move_backward")
+                elif number ==2:
+                    send_message("move_left")
+                elif number==3:
+                    send_message("move_right")
+                elif number==28:
+                    mode="talk"
+                    send_message("i will talk now")
+                else:
+                    send_message("move_stop")
+
+                current_word = []
+
+                continue
+
             if not number:
                 # @ToDo Send Message to Rocky
                 message = ''.join(entire_message)
@@ -95,6 +116,10 @@ def parse_input(gui):
             elif number == 28:
                 # @ToDO Gyani independent sendall this asap
                 message = "change_mode"
+                if mode=="loco":
+                    mode="talk"
+                elif mode=="talk":
+                    mode="loco"
                 current_word = []
                 data = s.recv(BUFFER_SIZE)
                 buffer.set_text(message)
@@ -272,6 +297,8 @@ class Top(gtk.HBox):
 
 
     def locob(self, p=None):
+        global mode
+        mode="loco"
         if self.outer.talk in self.outer:
             self.outer.remove(self.outer.talk)
         if self.outer.loco not in self.outer:
@@ -280,6 +307,8 @@ class Top(gtk.HBox):
         self.Talk.modify_bg(gtk.STATE_NORMAL,gtk.gdk.color_parse('#ff0000'))
 
     def talkb(self, p=None):
+        global mode
+        mode="talk"
         if self.outer.loco in self.outer:
             self.outer.remove(self.outer.loco)
         if self.outer.talk not in self.outer:
