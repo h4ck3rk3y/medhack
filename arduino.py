@@ -7,8 +7,8 @@ import socket
 
 def send_message(message):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	ip='localhost'
-	port = 8080
+	ip='192.168.43.132'
+	port = 8081
 	BUFFER_SIZE = 1024
 	sock.connect((ip, port))
 	sock.send(message)

@@ -34,8 +34,8 @@ import threading
 def send_message(message):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ip='localhost'
-        port = 8080
+        ip='192.168.43.132'
+        port = 8081
         BUFFER_SIZE = 1024
         sock.connect((ip, port))
         sock.send(message)
@@ -53,7 +53,8 @@ def parse_input(gui):
             'gm': 'GOOD MORNING',
             'txt': 'TEXT', 'ie': 'THAT IS', 'brb': 'BE RIGHT BACK', 'cu': 'SEE YOU', 'grt': 'GREAT', 'thnx': 'THANKS', 'lol': 'LAUGHING OUT LOUD', '2': 'TO', '4': 'FOR', 'msg': 'MESSAGE', 'omg': 'OH MY GOD!!', 'asap': 'AS SOON AS POSSIBLE', 'plz': 'PLEASE', 'np': 'NO PROBLEM', '2moro': 'TOMMOROW', 'thku': 'THANK YOU', 'c': 'SEE', 'k': 'OK', 'coz': 'BECAUSE', 'sos': 'SAVE OUR SOULS',
             'bcc': 'BRING ME A CUP OF COFFEE',
-            'idk': "I DON'T KNOW", 'y': 'WHY', 'ot': 'OUT OF CONTEXT', 'ily': ' I LOVE YOU'}
+            'idk': "I DON'T KNOW", 'y': 'WHY', 'ot': 'OUT OF CONTEXT', 'ily': ' I LOVE YOU',
+            'cc': 'Bring me coffee a cup of Coffe?'}
 
     while True:
         data = ser.readline().strip()
@@ -87,7 +88,7 @@ def parse_input(gui):
                 continue
             elif number < 26:
                 message = chr(ord('a') + number - 1)
-                buffer.set_text(message)
+                buffer.set_text(''.join(entire_message))
                 print 'Character: %s' %(message)
             elif number == 27:
                 message = " "
@@ -101,7 +102,6 @@ def parse_input(gui):
                 continue
             elif number == 29:
                 # @ToDO independent sendall
-                gui.control_box.talk.message.get_buffer().set_text(message)
                 message = "this_is_an_sos"
                 send_message(message)
                 buffer.set_text(message)
@@ -219,7 +219,7 @@ class Talk(gtk.VBox):
 
         ibufer = gtk.TextBuffer
         self.input = gtk.TextView()
-        self.message.set_editable(setting=False)
+        self.message.set_editable(setting=True)
 
         self.input.set_editable(setting=True)
         self.send = gtk.Button("Send Input")
@@ -401,7 +401,7 @@ if __name__ == '__main__':
     # Multiple files.
     p=MultiVideoPlayer()
 
-    gui_thread = threading.Thread(target=p.main, kwargs={"filenames": ["rtp://@192.168.43.132"]})
+    gui_thread = threading.Thread(target=p.main, kwargs={"filenames": ["http://192.168.43.132:8080/video"]})
     gui_thread.start()
 
     audio_thread = threading.Thread(target=parse_input, kwargs={"gui": p})
